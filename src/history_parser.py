@@ -38,8 +38,9 @@ def pp(data, args):
   show_extra = args.extra
 
   sortKey = "count" if args.sortKey == "count" else "totalPlayed"
+  song_data = data['songs']
 
-  l = sorted(data.values(), key=lambda v: v[sortKey], reverse=True)
+  l = sorted(song_data.values(), key=lambda v: v[sortKey], reverse=True)
   headers = ["Artist", "Track", "Play Count", "Time Listened"]  if not show_extra \
     else ["Artist", "Track", "Play Count", "Time Listened", "Track length", "First Listen", "Last listened"]
   keys = ["artistName", "trackName", "count", "time"] if not show_extra \
@@ -51,11 +52,14 @@ def pp(data, args):
   ]
 
   tabulate(headers, rows)
+  print(f"\ntotal time {convert_ms(data['total'])}")
 
   if year:
     print(f"\nyear filter {year}")
 
 def aggregate_data(output_arr, file_data, filter_year=2024):
+  song_arr = output_arr['songs']
+
   for song in file_data:
     if filter_year:
       time_start = f"{filter_year}-01-01 00:00"
@@ -65,7 +69,9 @@ def aggregate_data(output_arr, file_data, filter_year=2024):
         continue
 
     key = f"{song['artistName']}-{song['trackName']}"
-    if key not in output_arr:
+    output_arr['total'] += song['msPlayed']
+
+    if key not in song_arr:
       song_data = {
         'endTime': song['endTime'],
         'lastListen': song['endTime'],
@@ -75,20 +81,23 @@ def aggregate_data(output_arr, file_data, filter_year=2024):
         'totalPlayed': song['msPlayed'],
         'played': [song['msPlayed']],
       }
-      output_arr[key] = song_data
+      song_arr[key] = song_data
     else:
-      output_arr[key]['totalPlayed'] += song['msPlayed']
-      output_arr[key]['played'].append(song['msPlayed'])
-      output_arr[key]['lastListen'] = song['endTime']
-      old_max = output_arr[key]['maxListened']
+      song_arr[key]['totalPlayed'] += song['msPlayed']
+      song_arr[key]['played'].append(song['msPlayed'])
+      song_arr[key]['lastListen'] = song['endTime']
+      old_max = song_arr[key]['maxListened']
       msPlayed = song['msPlayed']
       if msPlayed > old_max:
-        output_arr[key]['maxListened'] = msPlayed
+        song_arr[key]['maxListened'] = msPlayed
 
 def convert_ms(ms):
   seconds=int(ms/1000)%60
   minutes=int(ms/(1000*60))%60
   hours=int(ms/(1000*60*60))%24
+  days = int(ms/(1000*60*60*24))
+  if days > 0:
+    return f"{days}d {hours}h {minutes}min {seconds}s"
   if hours > 0:
     return f"{hours}h {minutes}min {seconds}s"
   else:
@@ -97,7 +106,9 @@ def convert_ms(ms):
 def most_common(lst):
     return max(set(lst), key=lst.count)
 
-def count_plays(data):
+def count_plays(full_data):
+  data = full_data['songs']
+
   for key in data:
     song = data[key]
     total_listened = song['totalPlayed']
@@ -119,7 +130,7 @@ def count_plays(data):
 def main(args):
   base = "StreamingHistory_music_"
 
-  parsed_data = {}
+  parsed_data = { 'songs': {}, 'total': 0 }
 
   for filename in get_filenames(base):
     file_data = read_json(filename)
