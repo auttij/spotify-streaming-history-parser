@@ -18,19 +18,18 @@ def read_json(filepath):
       return json.load(jf)
   
 def tabulate(headers, rows):
+  index_len = len(str(len(rows)))
   lengths = []
   for i, column in enumerate(headers):
     col = list(map(lambda x: len(str(x[i])), rows))
     lengths.append(max(col + [len(column)]) + 2)
 
-  for i, header in enumerate(headers):
-    print(f"{header.ljust(lengths[i])}", end="")
-  print()
+  header_row = [" " * index_len] + [f"{header.ljust(lengths[i])}" for i, header in enumerate(headers)]
+  print(" ".join(header_row))
 
-  for row in rows:
-    for i, val in enumerate(row):
-      print(f"{str(val).ljust(lengths[i])}", end="")
-    print()
+  for i, row in enumerate(rows):
+    line = [str(i + 1).rjust(index_len)] + [f"{str(val).ljust(lengths[j])}" for j, val in enumerate(row)]
+    print(" ".join(line))
 
 def pp(data, args):
   count = args.count
@@ -57,7 +56,7 @@ def pp(data, args):
   if year:
     print(f"\nyear filter {year}")
 
-def aggregate_data(output_arr, file_data, filter_year=2024):
+def aggregate_data(output_arr, file_data, filter_year=2024, filter_keyword=None):
   song_arr = output_arr['songs']
 
   for song in file_data:
@@ -69,6 +68,10 @@ def aggregate_data(output_arr, file_data, filter_year=2024):
         continue
 
     key = f"{song['artistName']}-{song['trackName']}"
+    if filter_keyword:
+      if not filter_keyword.lower() in key.lower():
+        continue
+
     output_arr['total'] += song['msPlayed']
 
     if key not in song_arr:
@@ -134,7 +137,7 @@ def main(args):
 
   for filename in get_filenames(base):
     file_data = read_json(filename)
-    aggregate_data(parsed_data, file_data, args.year)
+    aggregate_data(parsed_data, file_data, args.year, args.keyword)
   count_plays(parsed_data)
   pp(parsed_data, args)
 
@@ -144,6 +147,7 @@ def arg_parse():
   parser.add_argument("-y", "--year", help="Filter results by year", default=None, type=int)
   parser.add_argument("-s", "--sortKey", help="Sort results based on Play count or total play time", choices=["time", "count"], required=False, default="count")
   parser.add_argument("-e", "--extra", help="Show some extra information about results", action="store_true")
+  parser.add_argument('-k', "--keyword", help="keyword search filter", default=None)
   return parser.parse_args()
 
 if __name__ == '__main__':
