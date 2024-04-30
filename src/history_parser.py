@@ -31,9 +31,8 @@ def tabulate(headers, rows):
     line = [str(i + 1).rjust(index_len)] + [f"{str(val).ljust(lengths[j])}" for j, val in enumerate(row)]
     print(" ".join(line))
 
-def pp(data, args):
+def print_tracks(data, args):
   count = args.count
-  year = args.year
   show_extra = args.extra
 
   sortKey = "count" if args.sortKey == "count" else "totalPlayed"
@@ -51,13 +50,41 @@ def pp(data, args):
   ]
 
   tabulate(headers, rows)
+
+def print_artists(data, args):
+  count = args.count
+  headers = ["Artist", "Time Listened"]
+  keys = ["artistName", "time"]
+  artist_data = data['artists']
+  sortKey = 'totalPlayed'
+
+  l = sorted(artist_data.values(), key=lambda v: v[sortKey], reverse=True)
+
+  rows = [
+    [line[key] for key in keys]
+    for line in l[:count]
+  ]
+
+  tabulate(headers, rows)
+
+def pp(data, args):
+  if args.artists:
+    print_artists(data, args)
+  else:
+    print_tracks(data, args)
+
   print(f"\ntotal time {convert_ms(data['total'])}")
 
+  year = args.year
   if year:
     print(f"\nyear filter {year}")
 
-def aggregate_data(output_arr, file_data, filter_year=2024, filter_keyword=None):
+def aggregate_data(output_arr, file_data, args):
+
+  filter_year = args.year
+  filter_keyword = args.keyword
   song_arr = output_arr['songs']
+  artist_arr = output_arr['artists']
 
   for song in file_data:
     if filter_year:
@@ -94,6 +121,11 @@ def aggregate_data(output_arr, file_data, filter_year=2024, filter_keyword=None)
       if msPlayed > old_max:
         song_arr[key]['maxListened'] = msPlayed
 
+    artist_key = song['artistName']
+    if not artist_key in artist_arr:
+      artist_arr[artist_key] = { 'artistName': artist_key, 'totalPlayed': 0 }
+    artist_arr[artist_key]['totalPlayed'] += song['msPlayed']
+
 def convert_ms(ms):
   seconds=int(ms/1000)%60
   minutes=int(ms/(1000*60))%60
@@ -120,24 +152,29 @@ def count_plays(full_data):
     length = most_common(song['played'])
     length = length if length > 60000 else 60000
 
+    data[key]["time"] = time_played
+    data[key]["length"] = convert_ms(length)
+
     try:
       data[key]["count"] = total_listened // length
-      data[key]["time"] = time_played
-      data[key]["length"] = convert_ms(length)
     except: 
       data[key]["count"] = 0
-      data[key]["time"] = 0
-      data[key]["length"] = 0
-      
+
+  artist_data = full_data["artists"]
+  for key in artist_data:
+    artist = artist_data[key]
+    total_listened = artist['totalPlayed']
+    time_played = convert_ms(total_listened)
+    artist["time"] = time_played
 
 def main(args):
   base = "StreamingHistory_music_"
 
-  parsed_data = { 'songs': {}, 'total': 0 }
+  parsed_data = { 'songs': {}, 'artists': {}, 'total': 0 }
 
   for filename in get_filenames(base):
     file_data = read_json(filename)
-    aggregate_data(parsed_data, file_data, args.year, args.keyword)
+    aggregate_data(parsed_data, file_data, args)
   count_plays(parsed_data)
   pp(parsed_data, args)
 
@@ -147,7 +184,8 @@ def arg_parse():
   parser.add_argument("-y", "--year", help="Filter results by year", default=None, type=int)
   parser.add_argument("-s", "--sortKey", help="Sort results based on Play count or total play time", choices=["time", "count"], required=False, default="count")
   parser.add_argument("-e", "--extra", help="Show some extra information about results", action="store_true")
-  parser.add_argument('-k', "--keyword", help="keyword search filter", default=None)
+  parser.add_argument("-k", "--keyword", help="keyword search filter", default=None)
+  parser.add_argument("-a", "--artists", help="show artist statistics instead of tracks", action="store_true")
   return parser.parse_args()
 
 if __name__ == '__main__':
