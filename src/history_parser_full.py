@@ -84,6 +84,7 @@ class Statistics():
   def process_data(self):
     self.filter_data()
     self.count_plays()
+    self.count_artist_data()
 
   def songs_from_file(self, filename):
     json_data = read_json(filename)
@@ -136,10 +137,6 @@ class Statistics():
       if length and not self.songs[key]['lengthMs']:
         self.songs[key]['lengthMs'] = length
 
-    if not artist in self.artists:
-      self.artists[artist] = { 'totalPlayed': 0, 'artist': artist }
-    self.artists[artist]['totalPlayed'] += timePlayed
-
   def filter_data(self):
     if not (self.year_start or self.keyword):
       return
@@ -190,6 +187,14 @@ class Statistics():
       self.songs[key]['firstListen'] = first_play
       self.songs[key]['lastListen'] = last_play
 
+  def count_artist_data(self):
+    for song in list(self.songs.values()):
+      artist = song['artist']
+      totalPlayed = song['totalPlayed']
+      if not artist in self.artists:
+        self.artists[artist] = { 'totalPlayed': 0, 'artist': artist }
+      self.artists[artist]['totalPlayed'] += totalPlayed
+    
     for key in self.artists:
       artist = self.artists[key]
       artist['time'] = convert_ms(artist['totalPlayed'])
