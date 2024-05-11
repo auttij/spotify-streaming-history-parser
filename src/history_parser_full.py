@@ -35,6 +35,9 @@ def convert_ms(ms):
 def most_common(lst):
     return max(set(lst), key=lst.count)
 
+def round_1000(x):
+  return int(round(x / 1000.0)) * 1000
+
 ### File utils
 
 def json_files(data_folder):
@@ -107,6 +110,7 @@ class Statistics():
     reason_end = song_json['reason_end']
     length = timePlayed \
       if reason_start == 'trackdone' and reason_end == 'trackdone' \
+      and timePlayed != 1313 \
       else None
 
     return [key, track, artist, endTime, timePlayed, length]
@@ -170,7 +174,9 @@ class Statistics():
       self.total += total_listened
       time_played = convert_ms(total_listened)
       confirmed_length = song['lengthMs']
-      length = confirmed_length if confirmed_length else most_common(list(song['plays'].values()))
+      estimated_length = most_common(list(round_1000(x) for x in song['plays'].values()))
+
+      length = confirmed_length if confirmed_length else estimated_length
       if length < 30000:
         length = 60000
       
