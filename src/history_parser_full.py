@@ -153,6 +153,7 @@ class Statistics():
         artist = song['artist']
         if not (kw in track.lower() or kw in artist.lower()):
           del self.songs[key]
+          continue
 
       if self.year:
         plays = song['plays']
