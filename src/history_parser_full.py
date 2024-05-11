@@ -60,7 +60,13 @@ class Statistics():
       self.songs = data['songs']
       self.artists = data['artists']
 
-    self.year = args.year
+    self.year_start = None
+    self.year_end = None
+    self.year = None
+    if (args.year):
+      self.year_start = args.year[0]
+      self.year_end = args.year[-1]
+      self.year = f"{self.year_start}..{self.year_end}" if len(args.year) > 1 else f"{self.year_start}"
     self.count = args.count if args.count else 10
     self.extra = args.extra
     self.sortKey = args.sortKey
@@ -131,11 +137,11 @@ class Statistics():
     self.artists[artist]['totalPlayed'] += timePlayed
 
   def filter_data(self):
-    if not (self.year or self.keyword):
+    if not (self.year_start or self.keyword):
       return
 
-    time_start = f"{self.year}-01-01 00:00"
-    time_end = f"{self.year}-12-13 00:00"
+    time_start = f"{self.year_start}-01-01 00:00"
+    time_end = f"{self.year_end}-12-13 00:00"
     def year_filter(time):
       if self.year:
         return time_start < time < time_end
@@ -242,7 +248,7 @@ def main(args):
 def arg_parse():
   parser = ArgumentParser()
   parser.add_argument("-c", "--count", help="The amount of results to show", default=10, type=int)
-  parser.add_argument("-y", "--year", help="Filter results by year", default=None, type=int)
+  parser.add_argument("-y", "--year", help="Filter results by year", action="extend", nargs="+", default=None)
   parser.add_argument("-s", "--sortKey", help="Sort results based on Play count or total play time", choices=["time", "count"], required=False, default="time")
   parser.add_argument("-e", "--extra", help="Show some extra information about results", action="store_true")
   parser.add_argument('-k', "--keyword", help="keyword search filter", default=None)
