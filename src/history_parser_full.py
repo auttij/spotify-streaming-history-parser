@@ -172,8 +172,8 @@ class Statistics():
       self.songs[key]["count"] = total_listened // length
 
       plays = list(self.songs[key]['plays'].keys())
-      first_play = plays[0]
-      last_play = plays[-1]
+      first_play = min(plays)
+      last_play = max(plays)
       self.songs[key]['firstListen'] = first_play
       self.songs[key]['lastListen'] = last_play
 
