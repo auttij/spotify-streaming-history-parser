@@ -91,9 +91,9 @@ class Statistics():
     if not self.is_song(song_json):
       return None
     
-    key = song_json['spotify_track_uri']
     track = song_json['master_metadata_track_name']
     artist = song_json['master_metadata_album_artist_name']
+    key = f"{artist}-{track}"
     endTime = song_json['ts']
     timePlayed = song_json['ms_played']
 
