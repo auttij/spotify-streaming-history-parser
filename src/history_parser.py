@@ -32,6 +32,29 @@ def convert_ms(ms):
   else:
     return f"{minutes}min {seconds}s"
 
+def estimate_time(plays):
+  # Round to 1 sec
+  rounded_values = list(round_1000(x) for x in plays)
+
+  # Filter out times lasting under 10s, to get rid of skips
+  non_zero = [val for val in rounded_values if not val < 10000]
+
+  # if no listens remain keep longest listen
+  if len(non_zero) == 0:
+    non_zero = [max(rounded_values)]
+
+  # Get most common occurency
+  # If same track is listened through multiple times,
+  # this value is most likely the track length
+  common = most_common(non_zero)
+
+  # if the most common occurency has only been listened once
+  # get the longest listen instead. More accurate results for
+  # songs with few listening times
+  if non_zero.count(common) == 1:
+    common = max(non_zero)
+  return common
+
 def most_common(lst):
     return max(set(lst), key=lst.count)
 
@@ -179,7 +202,7 @@ class Statistics():
       total_listened = song['totalPlayed']
       self.total += total_listened
       time_played = convert_ms(total_listened)
-      length = most_common(list(round_1000(x) for x in song['plays'].values()))
+      length = estimate_time(song['plays'].values())
 
       if length < 30000:
         length = 60000
