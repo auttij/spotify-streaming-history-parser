@@ -71,7 +71,7 @@ class Statistics():
       self.year_start = args.year[0]
       self.year_end = args.year[-1]
       self.year = f"{self.year_start}..{self.year_end}" if len(args.year) > 1 else f"{self.year_start}"
-    self.count = args.count if args.count else 10
+    self.count = args.count
     self.extra = args.extra
     self.sortKey = args.sortKey
     self.keyword = args.keyword
@@ -278,12 +278,12 @@ def main(args):
 
 def arg_parse():
   parser = ArgumentParser()
+  parser.add_argument("-a", "--artists", help="Show artist statistics instead of tracks", action="store_true")
   parser.add_argument("-c", "--count", help="The amount of results to show", default=10, type=int)
-  parser.add_argument("-y", "--year", help="Filter results by year", action="extend", nargs="+", default=None)
-  parser.add_argument("-s", "--sortKey", help="Sort results based on Play count or total play time", choices=["time", "count"], required=False, default="time")
   parser.add_argument("-e", "--extra", help="Show some extra information about results", action="store_true")
-  parser.add_argument('-k', "--keyword", help="keyword search filter", default=None)
-  parser.add_argument("-a", "--artists", help="show artist statistics instead of tracks", action="store_true")
+  parser.add_argument('-k', "--keyword", help="Keyword search filter", default=None)
+  parser.add_argument("-s", "--sortKey", help="Sort results based on Play count or total play time", choices=["time", "count"], required=False, default="count")
+  parser.add_argument("-y", "--year", help="Filter results by year or range of years", action="extend", nargs="+", default=None)
   return parser.parse_args()
 
 if __name__ == '__main__':
