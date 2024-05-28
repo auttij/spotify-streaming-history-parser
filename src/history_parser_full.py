@@ -58,6 +58,7 @@ class Statistics():
     self.songs = {}
     self.artists = {}
     self.total = 0
+    self.flavor = None
 
     if data:
       self.songs = data['songs']
@@ -76,6 +77,22 @@ class Statistics():
     self.keyword = args.keyword
     self.artists_only = args.artists
 
+    self.track_key = None
+
+  def recognize_data_flavor(self, song_data):
+    if 'master_metadata_track_name' in song_data:
+      self.flavor = 'full'
+      self.track_key = 'master_metadata_track_name'
+      self.artist_key = 'master_metadata_album_artist_name'
+      self.endtime_key = 'ts'
+      self.ms_key = 'ms_played'
+    else:
+      self.flavor = 'partial'
+      self.track_key = 'trackName'
+      self.artist_key = 'artistName'
+      self.endtime_key = 'endTime'
+      self.ms_key = 'msPlayed'
+
   def parse_files(self, filenames):
     for file in filenames:
       for song_data in self.songs_from_file(file):
@@ -88,6 +105,8 @@ class Statistics():
 
   def songs_from_file(self, filename):
     json_data = read_json(filename)
+    if self.flavor is None:
+      self.recognize_data_flavor(json_data[0])
     for song_json in json_data:
       song_data = self.extract_data(song_json)
       if not song_data: 
@@ -95,24 +114,24 @@ class Statistics():
       yield song_data
 
   def is_song(self, song_json):
-    return song_json['master_metadata_track_name'] is not None
+    return song_json[self.track_key] is not None
 
   def extract_data(self, song_json):
     if not self.is_song(song_json):
       return None
     
-    track = song_json['master_metadata_track_name']
-    artist = song_json['master_metadata_album_artist_name']
+    track = song_json[self.track_key]
+    artist = song_json[self.artist_key]
     key = f"{artist}-{track}"
-    endTime = song_json['ts']
-    timePlayed = song_json['ms_played']
+    endTime = song_json[self.endtime_key]
+    timePlayed = song_json[self.ms_key]
 
-    reason_start = song_json['reason_start']
-    reason_end = song_json['reason_end']
-    length = timePlayed \
-      if reason_start == 'trackdone' and reason_end == 'trackdone' \
-      and timePlayed != 1313 \
-      else None
+    length = None
+    if self.flavor == 'full':
+      reason_start = song_json['reason_start']
+      reason_end = song_json['reason_end']
+      if reason_start == 'trackdone' and reason_end == 'trackdone' and timePlayed != 1313:
+        length = timePlayed
 
     return [key, track, artist, endTime, timePlayed, length]
 
