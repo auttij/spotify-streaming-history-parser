@@ -126,17 +126,10 @@ class Statistics():
     endTime = song_json[self.endtime_key]
     timePlayed = song_json[self.ms_key]
 
-    length = None
-    if self.flavor == 'full':
-      reason_start = song_json['reason_start']
-      reason_end = song_json['reason_end']
-      if reason_start == 'trackdone' and reason_end == 'trackdone' and timePlayed != 1313:
-        length = timePlayed
-
-    return [key, track, artist, endTime, timePlayed, length]
+    return [key, track, artist, endTime, timePlayed]
 
   def track_data(self, song_data):
-    key, track, artist, endTime, timePlayed, length = song_data
+    key, track, artist, endTime, timePlayed = song_data
 
     if not key in self.songs:
       song_data = {
@@ -145,7 +138,6 @@ class Statistics():
         'firstListen': endTime,
         'lastListen': endTime,
         'totalPlayed': timePlayed,
-        'lengthMs': length,
         'plays': { endTime: timePlayed }
       }
       self.songs[key] = song_data
@@ -153,8 +145,6 @@ class Statistics():
       self.songs[key]['totalPlayed'] += timePlayed
       self.songs[key]['lastListen'] = endTime
       self.songs[key]['plays'][endTime] = timePlayed
-      if length and not self.songs[key]['lengthMs']:
-        self.songs[key]['lengthMs'] = length
 
   def filter_data(self):
     if not (self.year_start or self.keyword):
@@ -189,10 +179,8 @@ class Statistics():
       total_listened = song['totalPlayed']
       self.total += total_listened
       time_played = convert_ms(total_listened)
-      confirmed_length = song['lengthMs']
-      estimated_length = most_common(list(round_1000(x) for x in song['plays'].values()))
+      length = most_common(list(round_1000(x) for x in song['plays'].values()))
 
-      length = confirmed_length if confirmed_length else estimated_length
       if length < 30000:
         length = 60000
       
