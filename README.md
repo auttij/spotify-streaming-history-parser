@@ -7,13 +7,15 @@ A small CLI tool to parse and read spotify streaming data
 1. Head to the [Spotify privacy settings](https://www.spotify.com/en/account/privacy/) and request your streaming information. You can request streaming data in two ways:
     - Request account data. This only includes the streaming history of the past year
     - Request extended streaming history.
-2. Once you have the data, move the related files to the src/data folder
+2. Once you have the data, move the related files to the ```src/data``` folder
     - If you requested the account data, the StreamingHistory_music_X.json files contain the streaming history
 3. navigate to the ```src``` folder
 4. run ```python history_parser.py```
 
 This should generate output that looks something like the following:
 ![Output example](img/example.png)
+
+After running the script for the first time, the script stores the parsed data in ```src/parsed.json``` and use that data afterwards. If you wish to change the data you're using, delete the ```parsed.json``` file and re-run the script.   
 
 ## CLI options
 ### -h / --help
